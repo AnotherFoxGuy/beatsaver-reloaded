@@ -48,7 +48,7 @@ namespace server.Services
     public void Remove(string id) =>
       _Users.DeleteOne(User => User._id == id);
 
-    public string generateJwtToken(User user)
+    public string GenerateJwtToken(User user)
     {
       // generate token that is valid for 7 days
       var tokenHandler = new JwtSecurityTokenHandler();

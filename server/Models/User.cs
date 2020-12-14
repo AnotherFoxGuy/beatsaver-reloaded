@@ -7,9 +7,9 @@ namespace server.Models
   public abstract class Links
   {
     [BsonDefaultValue(null)]
-    private string steam{ get; set; }
+    public string steam{ get; set; }
     [BsonDefaultValue(null)]
-    string oculus{ get; set; }
+    public string oculus{ get; set; }
   }
 
   public class RedactedUser
@@ -32,6 +32,7 @@ namespace server.Models
     public string email{ get; set; }
     [BsonRequired]
     public string password{ get; set; }
+
     [BsonDefaultValue(null)]
     public string verifyToken{ get; set; }
   }

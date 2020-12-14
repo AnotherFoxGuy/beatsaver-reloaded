@@ -1,8 +1,10 @@
 ﻿using System;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using Microsoft.Extensions.Options;
 using server.Models;
 using server.Services;
+using WebApi.Helpers;
 
 namespace server.Controllers
 {
@@ -11,10 +13,12 @@ namespace server.Controllers
   public class Auth : ControllerBase
   {
     private readonly UserService _userService;
+    private readonly AppSettings _appSettings;
 
-    public Auth(UserService userService)
+    public Auth(UserService userService, IOptions<AppSettings> appSettings)
     {
       _userService = userService;
+      _appSettings = appSettings.Value;
     }
 
     [HttpPost("register")]
@@ -34,7 +38,7 @@ namespace server.Controllers
     }
 
     [HttpPost("login")]
-    public IActionResult Login([FromBody] djckjmd u)
+    public IActionResult Login([FromBody] User u)
     {
       var user = _userService.GetByUsername(u.username);
       if (user == null)
@@ -43,7 +47,7 @@ namespace server.Controllers
       if(pass != user.password)
         return Unauthorized();
 
-      var token = _userService.generateJwtToken(user);
+      var token = _userService.GenerateJwtToken(user);
 
       Response.Headers.Add("x-auth-token", token);
 
@@ -52,19 +56,13 @@ namespace server.Controllers
 
     private string hashPassword(string pass)
     {
-      var salt = Convert.FromBase64String("NZsP6NnmfBuYeJrrAKNuVQ==");
+      var salt = Convert.FromBase64String(_appSettings.Salt);
       return Convert.ToBase64String(KeyDerivation.Pbkdf2(
         password: pass,
         salt: salt,
         prf: KeyDerivationPrf.HMACSHA1,
         iterationCount: 10000,
         numBytesRequested: 256 / 8));
-    }
-
-    public class djckjmd
-    {
-      public string username { get; set; }
-      public string password { get; set; }
     }
   }
 }
