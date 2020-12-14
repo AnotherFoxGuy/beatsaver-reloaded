@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using server.Models;
 using server.Services;
+using WebApi.Helpers;
 
 namespace server
 {
@@ -27,18 +28,12 @@ namespace server
       services.AddCors(options =>
       {
         options.AddPolicy(name: MyAllowSpecificOrigins,
-          builder =>
-          {
-            builder.WithOrigins("localhost");
-          });
+          builder => { builder.WithOrigins("localhost"); });
       });
 
       // requires using Microsoft.Extensions.Options
-      services.Configure<DatabaseSettings>(
-        Configuration.GetSection(nameof(DatabaseSettings)));
-
-      services.AddSingleton<IDatabaseSettings>(sp =>
-        sp.GetRequiredService<IOptions<DatabaseSettings>>().Value);
+      services.Configure<DatabaseSettings>(Configuration.GetSection(nameof(DatabaseSettings)));
+      services.Configure<AppSettings>(Configuration.GetSection(nameof(AppSettings)));
 
       services.AddSingleton<UserService>();
 
@@ -62,9 +57,10 @@ namespace server
 
       app.UseRouting();
 
-      app.UseAuthorization();
+      // custom jwt auth middleware
+      app.UseMiddleware<JwtMiddleware>();
 
-      app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
+      app.UseEndpoints(endpoints => endpoints.MapControllers());
     }
   }
 }

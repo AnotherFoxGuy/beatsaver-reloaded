@@ -21,17 +21,11 @@ namespace server.Models
   internal abstract class Metadata
   {
     public string songName;
-
     public string songSubName;
-
     public string songAuthorName;
-
     public string levelAuthorName;
-
     public int duration;
-
     public int bpm;
-
     public IBeatmapCharacteristic[] characteristics;
   }
 
@@ -65,13 +59,9 @@ namespace server.Models
     public Vote[] votes;
 
     public string directDownload;
-
     public string downloadURL;
-
     public string coverURL;
-
     public string coverExt;
-
     public string hash;
   }
 

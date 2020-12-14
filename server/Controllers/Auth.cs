@@ -27,25 +27,44 @@ namespace server.Controllers
       if (user.password == null)
         return BadRequest("Password not set!");
 
-      var salt = Convert.FromBase64String("NZsP6NnmfBuYeJrrAKNuVQ==");
-      var hashed = Convert.ToBase64String(KeyDerivation.Pbkdf2(
-        password: user.password,
-        salt: salt,
-        prf: KeyDerivationPrf.HMACSHA1,
-        iterationCount: 10000,
-        numBytesRequested: 256 / 8));
-      user.password = hashed;
+      user.password = hashPassword(user.password);
       _userService.Create(user);
 
       return NoContent();
     }
 
     [HttpPost("login")]
-    public IActionResult Login(string username, string password)
+    public IActionResult Login([FromBody] djckjmd u)
     {
-      Response.Cookies.Append("x-auth-token","cfsdfcsdc");
+      var user = _userService.GetByUsername(u.username);
+      if (user == null)
+        return NotFound();
+      var pass = hashPassword(u.password);
+      if(pass != user.password)
+        return Unauthorized();
+
+      var token = _userService.generateJwtToken(user);
+
+      Response.Headers.Add("x-auth-token", token);
 
       return NoContent();
+    }
+
+    private string hashPassword(string pass)
+    {
+      var salt = Convert.FromBase64String("NZsP6NnmfBuYeJrrAKNuVQ==");
+      return Convert.ToBase64String(KeyDerivation.Pbkdf2(
+        password: pass,
+        salt: salt,
+        prf: KeyDerivationPrf.HMACSHA1,
+        iterationCount: 10000,
+        numBytesRequested: 256 / 8));
+    }
+
+    public class djckjmd
+    {
+      public string username { get; set; }
+      public string password { get; set; }
     }
   }
 }

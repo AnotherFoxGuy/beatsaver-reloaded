@@ -15,12 +15,11 @@ namespace server.Controllers
       _userService = userService;
     }
 
+    [Authorize]
     [HttpGet("me")]
     public ActionResult<RedactedUser> Me()
     {
-      var user = _userService.GetByEmail("XD@XD.XD");
-
-      if (user == null)
+      if (!(HttpContext.Items["User"] is User user))
         return NotFound();
 
       return new RedactedUser
