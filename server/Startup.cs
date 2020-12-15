@@ -36,7 +36,9 @@ namespace server
       services.Configure<AppSettings>(Configuration.GetSection(nameof(AppSettings)));
 
       services.AddSingleton<UserService>();
+      services.AddSingleton<MapsService>();
 
+      services.AddHealthChecks();
       services.AddControllers();
       services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo {Title = "server", Version = "v1"}); });
     }
@@ -61,6 +63,7 @@ namespace server
       app.UseMiddleware<JwtMiddleware>();
 
       app.UseEndpoints(endpoints => endpoints.MapControllers());
+      app.UseEndpoints(endpoints => endpoints.MapHealthChecks("/health"));
     }
   }
 }

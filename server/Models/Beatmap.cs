@@ -1,93 +1,146 @@
+// ReSharper disable InconsistentNaming
+
 using System;
+using System.Collections.Generic;
 using System.Reflection.Metadata;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Bson.Serialization.Serializers;
+using MongoDB.Driver;
+using server.Models;
 
 namespace server.Models
 {
-  internal enum EVote
+  public enum EVote
   {
     Upvote = 1,
     Downvote = -1
   }
 
-  internal abstract class EDifficulties
+  public class Vote
   {
-    public bool easy;
-    public bool normal;
-    public bool hard;
-    public bool expert;
-    public bool expertPlus;
+    public EVote direction { get; set; }
+    public string voterUID { get; set; }
   }
 
-  internal abstract class Metadata
+  public class Difficulties
   {
-    public string songName;
-    public string songSubName;
-    public string songAuthorName;
-    public string levelAuthorName;
-    public int duration;
-    public int bpm;
-    public IBeatmapCharacteristic[] characteristics;
+    public bool easy { get; set; }
+    public bool expert { get; set; }
+    public bool expertPlus { get; set; }
+    public bool hard { get; set; }
+    public bool normal { get; set; }
   }
 
-  internal abstract class Stats
+  public class IParsedDifficulty
   {
-    public int downloads;
-    public int plays;
-    public int upVotes;
-    public int downVotes;
-    public int rating;
-    public int heat;
+    public double duration { get; set; }
+    public int length { get; set; }
+    public int njs { get; set; }
+    public int njsOffset { get; set; }
+    public int bombs { get; set; }
+    public int notes { get; set; }
+    public int obstacles { get; set; }
   }
 
-  internal abstract class Vote
+  public class IDifficulties
   {
-    public EVote direction;
-    public string voterUID;
+    public IParsedDifficulty easy { get; set; }
+    public IParsedDifficulty expert { get; set; }
+    public IParsedDifficulty expertPlus { get; set; }
+    public IParsedDifficulty hard { get; set; }
+    public IParsedDifficulty normal { get; set; }
   }
 
-  internal abstract class Beatmap
+  public class IBeatmapCharacteristic
   {
-    public string key;
-    public string name;
-    public string description;
-    public User uploader;
-    public DateTime uploaded;
-    public DateTime deletedAt;
-
-    public Metadata metadata;
-    public Stats stats;
-    public Vote[] votes;
-
-    public string directDownload;
-    public string downloadURL;
-    public string coverURL;
-    public string coverExt;
-    public string hash;
+    public IDifficulties difficulties { get; set; }
+    public string name { get; set; }
   }
 
-  public abstract class IParsedDifficulty
+  public class Metadata
   {
-    public int duration;
-    public int length;
-    public int bombs;
-    public int notes;
-    public int obstacles;
-    public int njs;
-    public int njsOffset;
+    public Difficulties difficulties { get; set; }
+    public int duration { get; set; }
+    public List<IBeatmapCharacteristic> characteristics { get; set; }
+    public string levelAuthorName { get; set; }
+    public string songAuthorName { get; set; }
+    public string songName { get; set; }
+    public string songSubName { get; set; }
+    public int bpm { get; set; }
   }
 
-  public abstract class IDifficulties
+  public class Stats
   {
-    public IParsedDifficulty easy;
-    public IParsedDifficulty normal;
-    public IParsedDifficulty hard;
-    public IParsedDifficulty expert;
-    public IParsedDifficulty expertPlus;
+    public int downloads { get; set; }
+    public int plays { get; set; }
+    public int downVotes { get; set; }
+    public int upVotes { get; set; }
+    public double heat { get; set; }
+    public int rating { get; set; }
   }
 
-  public abstract class IBeatmapCharacteristic
+  public class Beatmap
   {
-    public string name;
-    public IDifficulties difficulties;
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string _id { get; set; }
+
+    public Metadata metadata { get; set; }
+    public Stats stats { get; set; }
+    public string description { get; set; }
+    public object deletedAt { get; set; }
+
+    public string name { get; set; }
+
+    //[BsonRepresentation(BsonType.ObjectId)]
+    //public string uploader { get; set; }
+
+    [BsonSerializer(typeof(uploaderSerializer))]
+    public MongoDBRef uploader { get; set; }
+
+    public string hash { get; set; }
+    public string coverExt { get; set; }
+
+    [BsonRepresentation(BsonType.DateTime)]
+    public DateTime uploaded { get; set; }
+
+    public List<Vote> votes { get; set; }
+    [BsonIgnore] public string directDownload => $"/cdn/{key}/{hash}.zip";
+
+    [BsonIgnore] public string downloadURL => $"/download/key/{key}";
+
+    [BsonIgnore] public string coverURL => $"/cdn/{key}/{hash}{coverExt}";
+
+    [BsonSerializer(typeof(HexSerializer))]
+    public string key { get; set; }
+
+    public int __v { get; set; }
+  }
+
+
+  class uploaderSerializer : SerializerBase<MongoDBRef>
+  {
+    public override MongoDBRef Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
+    {
+      return new MongoDBRef("users", context.Reader.ReadObjectId());
+    }
+
+    public override void Serialize(BsonSerializationContext context, BsonSerializationArgs args, MongoDBRef value)
+    {
+      //context.Writer.WriteInt32(Int32.Parse(value, System.Globalization.NumberStyles.HexNumber));
+    }
+  }class HexSerializer : SerializerBase<string>
+  {
+    public override string Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
+    {
+      return Convert.ToString(context.Reader.ReadInt32(), 16);
+    }
+
+    public override void Serialize(BsonSerializationContext context, BsonSerializationArgs args, string value)
+    {
+      context.Writer.WriteInt32(Int32.Parse(value, System.Globalization.NumberStyles.HexNumber));
+    }
   }
 }

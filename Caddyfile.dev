@@ -1,9 +1,13 @@
 localhost
 
 root * client/dist/client
-file_server
 
 route /api/* {
 	uri strip_prefix /api
 	reverse_proxy localhost:5000
+}
+
+route {
+    try_files {path} {path}/ /index.html
+    file_server
 }
